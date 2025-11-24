@@ -1,90 +1,103 @@
 import { Router } from "express";
+import { supabase } from "../lib/supabase";
 
 const router = Router();
 
-// Mock messages storage
-const messages: any[] = [
-    {
-        id: 1,
-        senderId: 1,
-        senderName: "John Host",
-        receiverId: 2,
-        receiverName: "Jane Guest",
-        propertyId: 1,
-        propertyName: "Luxury Beach Villa",
-        message: "Hi! I'm interested in booking your property for next week.",
-        timestamp: new Date(Date.now() - 3600000).toISOString(),
-        read: true
-    },
-    {
-        id: 2,
-        senderId: 2,
-        senderName: "Jane Guest",
-        receiverId: 1,
-        receiverName: "John Host",
-        propertyId: 1,
-        propertyName: "Luxury Beach Villa",
-        message: "Great! The property is available. Would you like to proceed with the booking?",
-        timestamp: new Date(Date.now() - 1800000).toISOString(),
-        read: false
-    }
-];
+// Get all messages for a user (Assuming we pass userId in query or use auth middleware later)
+router.get("/", async (req, res) => {
+    try {
+        const { data: messages, error } = await supabase
+            .from('Message') // Assuming a Message table exists
+            .select('*');
 
-// Get all messages for a user
-router.get("/", (req, res) => {
-    // In a real app, filter by authenticated user ID
-    res.json(messages);
+        if (error) throw error;
+
+        res.json(messages);
+    } catch (error) {
+        console.error("Error fetching messages:", error);
+        res.status(500).json({ error: "Failed to fetch messages" });
+    }
 });
 
-// Get conversation between two users
-router.get("/conversation/:userId", (req, res) => {
-    const userId = parseInt(req.params.userId);
-    const conversation = messages.filter(
-        m => m.senderId === userId || m.receiverId === userId
-    );
+// Get conversation between two users (or for a specific user)
+router.get("/conversation/:userId", async (req, res) => {
+    try {
+        const userId = parseInt(req.params.userId);
+        const { data: conversation, error } = await supabase
+            .from('Message')
+            .select('*')
+            .or(`senderId.eq.${userId},receiverId.eq.${userId}`)
+            .order('timestamp', { ascending: true });
 
-    res.json(conversation);
+        if (error) throw error;
+
+        res.json(conversation);
+    } catch (error) {
+        console.error("Error fetching conversation:", error);
+        res.status(500).json({ error: "Failed to fetch conversation" });
+    }
 });
 
 // Send a new message
-router.post("/", (req, res) => {
+router.post("/", async (req, res) => {
     const { senderId, senderName, receiverId, receiverName, propertyId, propertyName, message } = req.body;
 
-    const newMessage = {
-        id: messages.length + 1,
-        senderId,
-        senderName,
-        receiverId,
-        receiverName,
-        propertyId,
-        propertyName,
-        message,
-        timestamp: new Date().toISOString(),
-        read: false
-    };
+    try {
+        const { data: newMessage, error } = await supabase
+            .from('Message')
+            .insert([
+                {
+                    senderId,
+                    senderName,
+                    receiverId,
+                    receiverName,
+                    propertyId,
+                    propertyName,
+                    message,
+                    timestamp: new Date().toISOString(),
+                    read: false
+                }
+            ])
+            .select()
+            .single();
 
-    messages.push(newMessage);
+        if (error) throw error;
 
-    res.status(201).json({
-        success: true,
-        message: newMessage
-    });
+        res.status(201).json({
+            success: true,
+            message: newMessage
+        });
+    } catch (error) {
+        console.error("Error sending message:", error);
+        res.status(500).json({ error: "Failed to send message" });
+    }
 });
 
 // Mark message as read
-router.patch("/:id/read", (req, res) => {
-    const message = messages.find(m => m.id === parseInt(req.params.id));
+router.patch("/:id/read", async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        const { data: message, error } = await supabase
+            .from('Message')
+            .update({ read: true })
+            .eq('id', id)
+            .select()
+            .single();
 
-    if (!message) {
-        return res.status(404).json({ error: "Message not found" });
+        if (error) throw error;
+
+        if (!message) {
+            return res.status(404).json({ error: "Message not found" });
+        }
+
+        res.json({
+            success: true,
+            message
+        });
+    } catch (error) {
+        console.error("Error marking message as read:", error);
+        res.status(500).json({ error: "Failed to mark message as read" });
     }
-
-    message.read = true;
-
-    res.json({
-        success: true,
-        message
-    });
 });
 
 export default router;

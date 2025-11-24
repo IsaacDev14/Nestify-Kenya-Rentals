@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import type { Property, Category } from "../types";
+import { propertyService } from "../services/api";
 
 interface PropertyWithCategory extends Property {
     category?: Category;
@@ -19,8 +19,10 @@ const PropertyDetailsPage: React.FC = () => {
     useEffect(() => {
         const fetchProperty = async () => {
             try {
-                const response = await axios.get(`http://localhost:5000/api/properties/${id}`);
-                setProperty(response.data);
+                if (id) {
+                    const data = await propertyService.getById(parseInt(id));
+                    setProperty(data);
+                }
             } catch (err) {
                 setError("Failed to load property details.");
             } finally {
@@ -28,9 +30,7 @@ const PropertyDetailsPage: React.FC = () => {
             }
         };
 
-        if (id) {
-            fetchProperty();
-        }
+        fetchProperty();
     }, [id]);
 
     if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;

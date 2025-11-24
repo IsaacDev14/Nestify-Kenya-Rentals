@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import PropertyCard from "../components/PropertyCard";
 import type { Property, Category } from "../types";
+import { propertyService, categoryService } from "../services/api";
 
 const LandingPage: React.FC = () => {
     const [properties, setProperties] = useState<Property[]>([]);
@@ -14,12 +14,12 @@ const LandingPage: React.FC = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [propertiesRes, categoriesRes] = await Promise.all([
-                    axios.get("http://localhost:5000/api/properties"),
-                    axios.get("http://localhost:5000/api/categories"),
+                const [propertiesData, categoriesData] = await Promise.all([
+                    propertyService.getAll(),
+                    categoryService.getAll(),
                 ]);
-                setProperties(propertiesRes.data);
-                setCategories(categoriesRes.data);
+                setProperties(propertiesData);
+                setCategories(categoriesData);
             } catch (error) {
                 console.error("Error fetching data:", error);
             } finally {

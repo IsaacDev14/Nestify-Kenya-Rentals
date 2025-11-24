@@ -205,7 +205,7 @@ function main() {
             const category = yield prisma.category.findUnique({ where: { name: categoryName } });
             if (category) {
                 yield prisma.property.create({
-                    data: Object.assign(Object.assign({}, propData), { categoryId: category.id })
+                    data: Object.assign(Object.assign({}, propData), { imageUrls: JSON.stringify(propData.imageUrls), categoryId: category.id })
                 });
             }
         }

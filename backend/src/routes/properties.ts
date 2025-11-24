@@ -1,19 +1,24 @@
 import { Router } from "express";
-import { PrismaClient } from "@prisma/client";
+import { supabase } from "../lib/supabase";
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // Get all properties
 router.get("/", async (req, res) => {
   try {
-    const properties = await prisma.property.findMany();
-    const parsedProperties = properties.map((p) => ({
+    const { data: properties, error } = await supabase
+      .from('Property')
+      .select('*');
+
+    if (error) throw error;
+
+    const parsedProperties = properties.map((p: any) => ({
       ...p,
-      imageUrls: JSON.parse(p.imageUrls),
+      imageUrls: typeof p.imageUrls === 'string' ? JSON.parse(p.imageUrls) : p.imageUrls,
     }));
     res.json(parsedProperties);
   } catch (error) {
+    console.error("Error fetching properties:", error);
     res.status(500).json({ error: "Failed to fetch properties" });
   }
 });
@@ -22,17 +27,24 @@ router.get("/", async (req, res) => {
 router.get("/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const property = await prisma.property.findUnique({
-      where: { id },
-      include: { category: true },
-    });
+    const { data: property, error } = await supabase
+      .from('Property')
+      .select('*, category:Category(*)')
+      .eq('id', id)
+      .single();
+
+    if (error) throw error;
 
     if (property) {
-      res.json({ ...property, imageUrls: JSON.parse(property.imageUrls) });
+      res.json({
+        ...property,
+        imageUrls: typeof property.imageUrls === 'string' ? JSON.parse(property.imageUrls) : property.imageUrls
+      });
     } else {
       res.status(404).json({ message: "Property not found" });
     }
   } catch (error) {
+    console.error("Error fetching property:", error);
     res.status(500).json({ error: "Failed to fetch property" });
   }
 });

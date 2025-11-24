@@ -1,6 +1,6 @@
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import dotenv from 'dotenv';
+dotenv.config();
+import { supabase } from './lib/supabase';
 
 const categories = [
     { name: "Amazing views", icon: `<svg class="h-6 w-6 text-indigo-700 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>` },
@@ -181,30 +181,49 @@ const properties = [
 ];
 
 async function main() {
-    console.log('Start seeding ...');
+    console.log('Start seeding Supabase...');
 
     // Seed Categories
     for (const category of categories) {
-        await prisma.category.upsert({
-            where: { name: category.name },
-            update: {},
-            create: category,
-        });
+        const { error } = await supabase
+            .from('Category')
+            .upsert(category, { onConflict: 'name' });
+
+        if (error) {
+            console.error(`Error seeding category ${category.name}:`, error);
+        } else {
+            console.log(`Seeded category: ${category.name}`);
+        }
     }
 
     // Seed Properties
     for (const property of properties) {
         const { categoryName, ...propData } = property;
-        const category = await prisma.category.findUnique({ where: { name: categoryName } });
 
-        if (category) {
-            await prisma.property.create({
-                data: {
-                    ...propData,
-                    imageUrls: JSON.stringify(propData.imageUrls),
-                    categoryId: category.id
-                }
+        // Find category ID
+        const { data: category, error: catError } = await supabase
+            .from('Category')
+            .select('id')
+            .eq('name', categoryName)
+            .single();
+
+        if (catError || !category) {
+            console.error(`Category not found for property ${property.name}: ${categoryName}`);
+            continue;
+        }
+
+        const { error } = await supabase
+            .from('Property')
+            .insert({
+                ...propData,
+                imageUrls: JSON.stringify(propData.imageUrls), // Ensure this matches your DB schema (JSON or text)
+                categoryId: category.id
             });
+
+        if (error) {
+            console.error(`Error seeding property ${property.name}:`, error);
+        } else {
+            console.log(`Seeded property: ${property.name}`);
         }
     }
 
@@ -215,7 +234,4 @@ main()
     .catch((e) => {
         console.error(e);
         process.exit(1);
-    })
-    .finally(async () => {
-        await prisma.$disconnect();
     });
