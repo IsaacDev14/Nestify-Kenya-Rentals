@@ -19,9 +19,13 @@ var __rest = (this && this.__rest) || function (s, e) {
         }
     return t;
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-const client_1 = require("@prisma/client");
-const prisma = new client_1.PrismaClient();
+const dotenv_1 = __importDefault(require("dotenv"));
+dotenv_1.default.config();
+const supabase_1 = require("./lib/supabase");
 const categories = [
     { name: "Amazing views", icon: `<svg class="h-6 w-6 text-indigo-700 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>` },
     { name: "Beachfront", icon: `<svg class="h-6 w-6 text-blue-700 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>` },
@@ -190,23 +194,40 @@ const properties = [
 ];
 function main() {
     return __awaiter(this, void 0, void 0, function* () {
-        console.log('Start seeding ...');
+        console.log('Start seeding Supabase...');
         // Seed Categories
         for (const category of categories) {
-            yield prisma.category.upsert({
-                where: { name: category.name },
-                update: {},
-                create: category,
-            });
+            const { error } = yield supabase_1.supabase
+                .from('Category')
+                .upsert(category, { onConflict: 'name' });
+            if (error) {
+                console.error(`Error seeding category ${category.name}:`, error);
+            }
+            else {
+                console.log(`Seeded category: ${category.name}`);
+            }
         }
         // Seed Properties
         for (const property of properties) {
             const { categoryName } = property, propData = __rest(property, ["categoryName"]);
-            const category = yield prisma.category.findUnique({ where: { name: categoryName } });
-            if (category) {
-                yield prisma.property.create({
-                    data: Object.assign(Object.assign({}, propData), { imageUrls: JSON.stringify(propData.imageUrls), categoryId: category.id })
-                });
+            // Find category ID
+            const { data: category, error: catError } = yield supabase_1.supabase
+                .from('Category')
+                .select('id')
+                .eq('name', categoryName)
+                .single();
+            if (catError || !category) {
+                console.error(`Category not found for property ${property.name}: ${categoryName}`);
+                continue;
+            }
+            const { error } = yield supabase_1.supabase
+                .from('Property')
+                .insert(Object.assign(Object.assign({}, propData), { imageUrls: JSON.stringify(propData.imageUrls), categoryId: category.id }));
+            if (error) {
+                console.error(`Error seeding property ${property.name}:`, error);
+            }
+            else {
+                console.log(`Seeded property: ${property.name}`);
             }
         }
         console.log('Seeding finished.');
@@ -216,7 +237,4 @@ main()
     .catch((e) => {
     console.error(e);
     process.exit(1);
-})
-    .finally(() => __awaiter(void 0, void 0, void 0, function* () {
-    yield prisma.$disconnect();
-}));
+});

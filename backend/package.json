@@ -8,7 +8,8 @@
     "dev": "nodemon src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "seed": "ts-node src/seed.ts"
+    "seed": "ts-node src/seed.ts",
+    "test:supabase": "ts-node src/test-supabase.ts"
   },
   "keywords": [],
   "author": "",
