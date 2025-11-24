@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KenyaRentals - Database Seeder</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .info-box {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        
+        .info-box h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        
+        .info-box ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .info-box li {
+            padding: 5px 0;
+            color: #555;
+        }
+        
+        .info-box li:before {
+            content: "✓ ";
+            color: #667eea;
+            font-weight: bold;
+            margin-right: 5px;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        #log {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            display: none;
+        }
+        
+        #log.show {
+            display: block;
+        }
+        
+        .log-entry {
+            margin: 5px 0;
+        }
+        
+        .log-success {
+            color: #10b981;
+        }
+        
+        .log-error {
+            color: #ef4444;
+        }
+        
+        .log-info {
+            color: #3b82f6;
+        }
+        
+        .log-warning {
+            color: #f59e0b;
+        }
+        
+        .progress {
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .progress.show {
+            display: block;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #e5e7eb;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌱 KenyaRentals Database Seeder</h1>
+        <p class="subtitle">Populate your Firebase database with sample data</p>
+        
+        <div class="info-box">
+            <h3>What will be created:</h3>
+            <ul>
+                <li>300 realistic property listings</li>
+                <li>50 users (20 hosts, 30 regular users)</li>
+                <li>10 property categories</li>
+                <li>Kenyan locations and pricing</li>
+            </ul>
+        </div>
+        
+        <button id="seedBtn" onclick="startSeeding()">Start Seeding Database</button>
+        
+        <div id="progress" class="progress">
+            <div class="progress-bar">
+                <div id="progressFill" class="progress-fill" style="width: 0%">0%</div>
+            </div>
+        </div>
+        
+        <div id="log"></div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, collection, writeBatch, doc, getDocs } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBadT6ouTe0l7JoHH5rPeqh_qjBqxJCxQ4",
+            authDomain: "ai-tutor-app-96e60.firebaseapp.com",
+            projectId: "ai-tutor-app-96e60",
+            storageBucket: "ai-tutor-app-96e60.firebasestorage.app",
+            messagingSenderId: "829807447011",
+            appId: "1:829807447011:web:7ee1ff268937fdcb6deed6"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Data
+        const locations = ["Nairobi", "Mombasa", "Kisumu", "Nakuru", "Eldoret", "Thika", "Malindi", "Kitale", "Garissa", "Kakamega", "Nyeri", "Machakos", "Meru", "Kericho", "Naivasha", "Nanyuki", "Diani Beach", "Lamu", "Watamu", "Kilifi"];
+        const propertyTypes = ["Beachfront", "Apartment", "Villa", "Cabin", "Treehouse", "Countryside", "Lakefront", "Camping", "Mansion", "Cottage"];
+        const allAmenities = ["WiFi", "Kitchen", "Parking", "Pool", "Air conditioning", "Washing machine", "TV", "Gym", "Hot tub", "BBQ grill", "Beach access", "Garden", "Balcony", "Fireplace", "Security"];
+        const titlePrefixes = ["Luxury", "Cozy", "Modern", "Spacious", "Charming", "Beautiful", "Stunning", "Elegant", "Serene", "Private"];
+        const titleSuffixes = ["Retreat", "Getaway", "Haven", "Escape", "Paradise", "Oasis", "Sanctuary", "Villa", "Home", "Residence"];
+        const firstNames = ["John", "Jane", "Michael", "Sarah", "David", "Emily", "James", "Emma", "Robert", "Olivia", "William", "Ava", "Joseph", "Sophia", "Charles", "Isabella", "Thomas", "Mia"];
+        const lastNames = ["Kamau", "Wanjiru", "Ochieng", "Akinyi", "Mwangi", "Njeri", "Otieno", "Adhiambo", "Kimani", "Wambui"];
+
+        const random = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+        
+        const log = (message, type = 'info') => {
+            const logDiv = document.getElementById('log');
+            logDiv.classList.add('show');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = message;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        };
+
+        const updateProgress = (percent) => {
+            const progressDiv = document.getElementById('progress');
+            const progressFill = document.getElementById('progressFill');
+            progressDiv.classList.add('show');
+            progressFill.style.width = percent + '%';
+            progressFill.textContent = Math.round(percent) + '%';
+        };
+
+        const clearCollection = async (collectionName) => {
+            log(`🗑️  Clearing ${collectionName}...`, 'warning');
+            const snapshot = await getDocs(collection(db, collectionName));
+            if (snapshot.size === 0) {
+                log(`✓ ${collectionName} is already empty`, 'success');
+                return;
+            }
+            
+            const batch = writeBatch(db);
+            let count = 0;
+            snapshot.docs.forEach(docSnapshot => {
+                batch.delete(docSnapshot.ref);
+                count++;
+            });
+            await batch.commit();
+            log(`✓ Cleared ${count} documents from ${collectionName}`, 'success');
+        };
+
+        const seedCategories = async () => {
+            log('📁 Seeding categories...', 'info');
+            const categories = [
+                { name: "Beachfront", icon: "🏖️" },
+                { name: "Apartment", icon: "🏢" },
+                { name: "Villa", icon: "🏡" },
+                { name: "Cabin", icon: "🏕️" },
+                { name: "Treehouse", icon: "🌳" },
+                { name: "Countryside", icon: "🌾" },
+                { name: "Lakefront", icon: "🏞️" },
+                { name: "Camping", icon: "⛺" },
+                { name: "Mansion", icon: "🏰" },
+                { name: "Cottage", icon: "🏘️" }
+            ];
+            
+            const batch = writeBatch(db);
+            categories.forEach(category => {
+                const docRef = doc(collection(db, "categories"));
+                batch.set(docRef, category);
+            });
+            await batch.commit();
+            log(`✓ Seeded ${categories.length} categories`, 'success');
+        };
+
+        const seedUsers = async (count) => {
+            log(`👥 Seeding ${count} users...`, 'info');
+            const batch = writeBatch(db);
+            
+            for (let i = 1; i <= count; i++) {
+                const firstName = firstNames[random(0, firstNames.length - 1)];
+                const lastName = lastNames[random(0, lastNames.length - 1)];
+                const user = {
+                    name: `${firstName} ${lastName}`,
+                    email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}${i}@example.com`,
+                    isHost: i <= 20,
+                    avatar: `https://i.pravatar.cc/150?img=${i}`,
+                    wishlist: [],
+                    createdAt: new Date(Date.now() - random(0, 730) * 24 * 60 * 60 * 1000)
+                };
+                const docRef = doc(collection(db, "users"), `host_${i}`);
+                batch.set(docRef, user);
+            }
+            await batch.commit();
+            log(`✓ Seeded ${count} users`, 'success');
+        };
+
+        const seedProperties = async (count) => {
+            log(`🏠 Seeding ${count} properties...`, 'info');
+            let seeded = 0;
+            
+            while (seeded < count) {
+                const batch = writeBatch(db);
+                const remaining = Math.min(500, count - seeded);
+                
+                for (let i = 0; i < remaining; i++) {
+                    const type = propertyTypes[random(0, propertyTypes.length - 1)];
+                    const location = locations[random(0, locations.length - 1)];
+                    const prefix = titlePrefixes[random(0, titlePrefixes.length - 1)];
+                    const suffix = titleSuffixes[random(0, titleSuffixes.length - 1)];
+                    
+                    const property = {
+                        title: `${prefix} ${type} ${suffix} in ${location}`,
+                        description: `Experience the perfect blend of comfort and luxury in this stunning ${type.toLowerCase()} located in ${location}. Ideal for families and groups.`,
+                        price: random(30, 500) * 100,
+                        location: location,
+                        categoryId: type,
+                        images: [`https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&q=80`],
+                        amenities: allAmenities.sort(() => 0.5 - Math.random()).slice(0, random(4, 8)),
+                        rating: (random(35, 50) / 10).toFixed(1),
+                        reviews: random(5, 150),
+                        bedrooms: random(1, 6),
+                        bathrooms: random(1, 4),
+                        maxGuests: random(2, 12),
+                        hostId: `host_${random(1, 50)}`,
+                        available: random(0, 10) > 1,
+                        createdAt: new Date(Date.now() - random(0, 365) * 24 * 60 * 60 * 1000)
+                    };
+                    
+                    const docRef = doc(collection(db, "properties"));
+                    batch.set(docRef, property);
+                }
+                
+                await batch.commit();
+                seeded += remaining;
+                updateProgress((seeded / count) * 100);
+                log(`✓ Seeded ${seeded}/${count} properties`, 'success');
+            }
+        };
+
+        window.startSeeding = async () => {
+            const btn = document.getElementById('seedBtn');
+            btn.disabled = true;
+            btn.textContent = 'Seeding in progress...';
+            
+            try {
+                log('🌱 Starting database seeding...', 'info');
+                
+                await clearCollection('properties');
+                await clearCollection('users');
+                await clearCollection('categories');
+                
+                await seedCategories();
+                await seedUsers(50);
+                await seedProperties(300);
+                
+                log('', 'info');
+                log('✅ Database seeding completed successfully!', 'success');
+                log('📊 Summary:', 'info');
+                log('  - 10 categories', 'info');
+                log('  - 50 users (20 hosts)', 'info');
+                log('  - 300 properties', 'info');
+                log('', 'info');
+                log('🎉 Check your Firebase Console!', 'success');
+                
+                btn.textContent = 'Seeding Complete! ✓';
+                btn.style.background = '#10b981';
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+                btn.disabled = false;
+                btn.textContent = 'Retry Seeding';
+            }
+        };
+    </script>
+</body>
+</html>
