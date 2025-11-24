@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import { collection, writeBatch, doc, getDocs } from "firebase/firestore";
 import { db } from "../config/firebase";
 

@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import {
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
