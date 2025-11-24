@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import NestifyLogo from '../assets/nestify_logo.svg';
 
 const Navbar: React.FC = () => {
     const navigate = useNavigate();
@@ -47,17 +48,7 @@ const Navbar: React.FC = () => {
             <div className="flex justify-between items-center">
                 {/* Logo */}
                 <div className="flex items-center cursor-pointer" onClick={() => navigate('/')}>
-                    <svg
-                        className="h-8 w-8 md:h-10 md:w-10 text-red-500 mr-2"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                    >
-                        <path
-                            fillRule="evenodd"
-                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm-1-11a1 1 0 112 0v4a1 1 0 11-2 0V7zm3 0a1 1 0 112 0v4a1 1 0 11-2 0V7z"
-                            clipRule="evenodd"
-                        />
-                    </svg>
+                    <img src={NestifyLogo} alt="Nestify logo" className="h-8 w-8 md:h-10 md:w-10 mr-2" />
                     <span className="text-lg md:text-2xl font-bold text-gray-800">Nestify</span>
                 </div>
 
