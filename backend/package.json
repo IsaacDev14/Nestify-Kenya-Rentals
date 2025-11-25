@@ -9,6 +9,7 @@
     "build": "npm install && tsc",
     "start": "node dist/server.js",
     "seed": "ts-node src/seed.ts",
+    "seed:db": "node seed.js",
     "test:supabase": "ts-node src/test-supabase.ts"
   },
   "keywords": [],

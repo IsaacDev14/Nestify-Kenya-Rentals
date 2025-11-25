@@ -14,7 +14,7 @@ router.get("/", async (req, res) => {
 
     const parsedProperties = properties.map((p: any) => ({
       ...p,
-      imageUrls: typeof p.imageUrls === 'string' ? JSON.parse(p.imageUrls) : p.imageUrls,
+      imageUrls: typeof p.imageUrls === 'string' ? p.imageUrls.split(',') : p.imageUrls,
     }));
     res.json(parsedProperties);
   } catch (error) {
@@ -38,7 +38,7 @@ router.get("/:id", async (req, res) => {
     if (property) {
       res.json({
         ...property,
-        imageUrls: typeof property.imageUrls === 'string' ? JSON.parse(property.imageUrls) : property.imageUrls
+        imageUrls: typeof property.imageUrls === 'string' ? property.imageUrls.split(',') : property.imageUrls
       });
     } else {
       res.status(404).json({ message: "Property not found" });
