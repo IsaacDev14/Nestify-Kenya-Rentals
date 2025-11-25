@@ -4,6 +4,10 @@ import { useAuth } from "../context/AuthContext";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 
+// 🔑 TEST CREDENTIALS FOR QUICK LOGIN (Development/Testing Use Only)
+const TEST_EMAIL = "test@example.com";
+const TEST_PASSWORD = "password123";
+
 const LoginPage: React.FC = () => {
     const navigate = useNavigate();
     const { login } = useAuth();
@@ -13,10 +17,21 @@ const LoginPage: React.FC = () => {
     const [rememberMe, setRememberMe] = useState(false);
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
+    // --- START: Added Success State ---
+    const [isSuccess, setIsSuccess] = useState(false); 
+    // --- END: Added Success State ---
+
+    const handleAutofill = () => {
+        setEmail(TEST_EMAIL);
+        setPassword(TEST_PASSWORD);
+        setError(""); // Clear any previous errors on autofill
+        setIsSuccess(false); // Clear success state
+    };
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setError("");
+        setIsSuccess(false); // Reset success state
         setLoading(true);
 
         const success = await login(email, password);
@@ -24,7 +39,13 @@ const LoginPage: React.FC = () => {
         setLoading(false);
 
         if (success) {
-            navigate("/dashboard");
+            // --- START: Success Notification Logic ---
+            setIsSuccess(true);
+            // Show success message for 1.5 seconds before redirecting
+            setTimeout(() => {
+                navigate("/dashboard");
+            }, 1500); 
+            // --- END: Success Notification Logic ---
         } else {
             setError("Invalid email or password");
         }
@@ -38,6 +59,45 @@ const LoginPage: React.FC = () => {
                     <h2 className="text-3xl font-bold mb-2 text-center text-gray-800">Welcome back</h2>
                     <p className="text-center text-gray-600 mb-8">Log in to your Nestify account</p>
 
+                    {/* --- TEST CREDENTIALS BOX --- */}
+                    <div className="bg-indigo-50 border border-indigo-200 text-indigo-800 p-3 rounded-lg mb-4 text-sm font-mono">
+                        <p className="font-bold mb-1 flex items-center">
+                            <svg className="h-4 w-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M18 8h-2.5V6a4 4 0 10-8 0v2H5.5A1.5 1.5 0 004 9.5v8A1.5 1.5 0 005.5 19h13a1.5 1.5 0 001.5-1.5v-8A1.5 1.5 0 0018 8zM10 12a2 2 0 100 4 2 2 0 000-4zM7 6a3 3 0 116 0v2H7V6z" clipRule="evenodd" />
+                            </svg>
+                            TEST CREDENTIALS:
+                        </p>
+                        <ul className="list-disc list-inside ml-2">
+                            <li>Email: {TEST_EMAIL}</li>
+                            <li>Password:{TEST_PASSWORD}</li>
+                        </ul>
+                    </div>
+                    {/* --- END TEST CREDENTIALS BOX --- */}
+
+                    <div className="mb-4">
+                        <button
+                            onClick={handleAutofill}
+                            type="button"
+                            className="w-full flex items-center justify-center bg-indigo-500 text-white font-medium py-2 rounded-lg hover:bg-indigo-600 transition-colors duration-300 text-sm"
+                        >
+                            <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            </svg>
+                            Autofill Test Credentials
+                        </button>
+                    </div>
+
+                    {/* --- START: Added Success Notification Element --- */}
+                    {isSuccess && (
+                        <div className="bg-green-50 border border-green-200 text-green-700 p-3 rounded-lg mb-4 text-sm font-semibold flex items-center justify-center transition-opacity duration-300">
+                             <svg className="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                            Login Successful! Redirecting...
+                        </div>
+                    )}
+                    {/* --- END: Added Success Notification Element --- */}
+
                     {error && (
                         <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg mb-4 text-sm flex items-center">
                             <svg className="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
@@ -48,6 +108,7 @@ const LoginPage: React.FC = () => {
                     )}
 
                     <form onSubmit={handleLogin}>
+                        {/* ... Email, Password, Checkbox fields remain here ... */}
                         <div className="mb-5">
                             <label className="block text-gray-700 text-sm font-semibold mb-2" htmlFor="email">
                                 Email address
@@ -109,13 +170,15 @@ const LoginPage: React.FC = () => {
                                 Forgot password?
                             </a>
                         </div>
+                        {/* ... End of form fields ... */}
 
                         <button
                             type="submit"
-                            disabled={loading}
+                            // Prevent submitting while loading OR if success message is showing
+                            disabled={loading || isSuccess}
                             className="w-full bg-gradient-to-r from-red-500 to-pink-500 text-white font-bold py-3 rounded-lg hover:from-red-600 hover:to-pink-600 transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {loading ? "Logging in..." : "Log in"}
+                            {loading ? "Logging in..." : isSuccess ? "Success!" : "Log in"}
                         </button>
                     </form>
 
