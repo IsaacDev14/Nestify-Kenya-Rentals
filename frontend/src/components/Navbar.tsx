@@ -49,7 +49,7 @@ const Navbar: React.FC = () => {
                 {/* Logo */}
                 <div className="flex items-center cursor-pointer" onClick={() => navigate('/')}>
                     <img src={NestifyLogo} alt="Nestify logo" className="h-8 w-8 md:h-10 md:w-10 mr-2" />
-                    <span className="text-lg md:text-2xl font-bold text-gray-800">Nestify</span>
+                    <span className="text-lg md:text-2xl font-bold text-gray-800">Nestify-Homes</span>
                 </div>
 
                 {/* Desktop Search Bar */}
